@@ -2,6 +2,17 @@
 
 A professional-grade, AI-powered tool designed to analyze CVs and Resumes against specific Job Descriptions. It provides deep insights into ATS compatibility, skill gaps, and regional formatting standards using local AI processing.
 
+## 📸 Screenshots
+
+![Landing Page](./screenshots/home.png)
+*Modern Landing Page*
+
+![Analyzer Form](./screenshots/cv-analyzer.png)
+*Comprehensive CV Analyzer Form*
+
+![Analysis Results](./screenshots/results.png)
+*Detailed, Color-Coded Analysis Report*
+
 ## ✨ Features
 
 -   **Deep AI Analysis**: Leverages Ollama (local AI) to provide detailed, constructive feedback without sending sensitive data to the cloud.
