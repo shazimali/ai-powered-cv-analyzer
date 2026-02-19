@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { home } from '@/routes';
 import { analyze, status as getStatus } from '@/routes/cv-analyzer';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -6,15 +6,19 @@ import axios from 'axios';
 import { marked } from 'marked';
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
-const props = defineProps({
-    flash: Object,
-    analysis_report: String,
-});
+interface Props {
+    flash?: {
+        analysis_report?: string;
+    };
+    analysis_report?: string;
+}
 
-const analysisUuid = ref(null);
-const analysisStatus = ref(null);
-const internalReport = ref(null);
-const pollingInterval = ref(null);
+const props = defineProps<Props>();
+
+const analysisUuid = ref<string | null>(null);
+const analysisStatus = ref<string | null>(null);
+const internalReport = ref<string | null>(null);
+const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null);
 
 const report = computed(() => internalReport.value || props.analysis_report || props.flash?.analysis_report);
 const renderedReport = computed(() => {
@@ -29,7 +33,7 @@ const renderedReport = computed(() => {
     return marked(content);
 });
 
-const resultsSection = ref(null);
+const resultsSection = ref<HTMLElement | null>(null);
 
 watch(report, (newVal) => {
     if (newVal) {
@@ -44,13 +48,13 @@ onUnmounted(() => {
 });
 
 const form = useForm({
-    cv: null,
+    cv: null as File | null,
     job_title: '',
     job_description: '',
     target_company: '',
     industry: '',
     experience_level: '',
-    analysis_preferences: [],
+    analysis_preferences: [] as string[],
     target_country: '',
     current_career_level: '',
     name: '',
@@ -58,18 +62,23 @@ const form = useForm({
 });
 
 const isDragging = ref(false);
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 
-const handleFileSelect = (event) => {
-    form.cv = event.target.files[0];
+const handleFileSelect = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files[0]) {
+        form.cv = target.files[0] as any;
+    }
 };
 
-const handleDrop = (event) => {
+const handleDrop = (event: DragEvent) => {
     isDragging.value = false;
-    form.cv = event.dataTransfer.files[0];
+    if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
+        form.cv = event.dataTransfer.files[0] as any;
+    }
 };
 
-const startPolling = (uuid) => {
+const startPolling = (uuid: string) => {
     analysisUuid.value = uuid;
     pollingInterval.value = setInterval(async () => {
         try {
@@ -78,10 +87,10 @@ const startPolling = (uuid) => {
             
             if (response.data.status === 'completed') {
                 internalReport.value = response.data.report;
-                clearInterval(pollingInterval.value);
+                if (pollingInterval.value) clearInterval(pollingInterval.value);
                 form.processing = false;
             } else if (response.data.status === 'failed') {
-                clearInterval(pollingInterval.value);
+                if (pollingInterval.value) clearInterval(pollingInterval.value);
                 form.processing = false;
                 alert('Analysis failed. Please try again.');
             }
@@ -120,7 +129,7 @@ const submit = async () => {
     try {
         const response = await axios.post(analyze.url(), formData);
         startPolling(response.data.uuid);
-    } catch (error) {
+    } catch (error: any) {
         form.processing = false;
         analysisStatus.value = null;
         if (error.response?.data?.errors) {
@@ -206,7 +215,7 @@ const preferenceOptions = [
                             'border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer relative',
                             isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-800/20'
                         ]"
-                        @click="fileInput.click()"
+                        @click="() => fileInput?.click()"
                     >
                         <input 
                             ref="fileInput"
@@ -223,7 +232,7 @@ const preferenceOptions = [
                                 </svg>
                             </div>
                             <p v-if="!form.cv" class="text-lg font-medium">Drag and drop your CV here</p>
-                            <p v-else class="text-lg font-medium text-blue-400">{{ form.cv.name }}</p>
+                            <p v-else class="text-lg font-medium text-blue-400">{{ form.cv?.name }}</p>
                             <p class="text-slate-500 text-sm">Supported formats: <span class="text-slate-300">PDF, DOCX</span> • Max: <span class="text-slate-300">5MB</span></p>
                         </div>
                     </div>
